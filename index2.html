@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>合成实验室AI</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        color: #000000;
+        font-family: Arial, sans-serif;
+      }
+      p {
+        margin: 0;
+      }
+      .main {
+        height: 100vh;
+        width: 100%;
+        margin: 0 auto;
+        background-color: #f5f5f5;
+      }
+      .chat {
+        height: calc(100vh - 60px);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 10px;
+        background-color: #f9f9f9;
+      }
+      .message {
+        margin: 10px;
+        padding: 12px 16px;
+        border-radius: 18px;
+        background-color: white;
+        word-wrap: break-word;
+        max-width: 80%;
+        align-self: flex-start;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+      .sender {
+        align-self: flex-end;
+        background-color: #4caf50;
+        color: white;
+      }
+      .actions {
+        display: flex;
+        align-items: center;
+        height: 60px;
+        padding: 0 16px;
+        background-color: white;
+        box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.1);
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+      input {
+        border-radius: 20px;
+        flex: 1;
+        height: 40px;
+        border: 1px solid #ddd;
+        padding: 0 16px;
+        font-size: 16px;
+        outline: none;
+      }
+      input:focus {
+        border-color: #4caf50;
+      }
+      button {
+        border-radius: 20px;
+        height: 40px;
+        min-width: 80px;
+        border: none;
+        margin-left: 12px;
+        background-color: #4caf50;
+        color: white;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      .typing-indicator {
+        display: inline-block;
+        margin-left: 8px;
+      }
+      .typing-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: #888;
+        margin-right: 4px;
+        animation: typingAnimation 1.4s infinite ease-in-out;
+      }
+      .typing-dot:nth-child(1) {
+        animation-delay: 0s;
+      }
+      .typing-dot:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .typing-dot:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      @keyframes typingAnimation {
+        0%,
+        60%,
+        100% {
+          transform: translateY(0);
+        }
+        30% {
+          transform: translateY(-5px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main">
+      <div class="chat">
+        <div class="message">
+          你好，我是合成实验室AI助手，有什么可以帮助您？
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <input type="text" id="inputMessage" placeholder="请输入..." />
+      <button onclick="send()">发送</button>
+    </div>
+
+    <script src="https://unpkg.com/marked@14.1.2/marked.min.js"></script>
+    <!--marked-->
+    <script>
+      const inputMessage = document.getElementById("inputMessage");
+      const chat = document.querySelector(".chat");
+
+      function send() {
+        const message = inputMessage.value.trim();
+        if (!message) return;
+
+        const newMessage = document.createElement("div");
+        newMessage.className = "message sender";
+        newMessage.innerHTML = marked.parse(message); //marked
+        chat.appendChild(newMessage);
+        chat.scrollTop = chat.scrollHeight;
+
+        inputMessage.value = "";
+
+        const botMessageContainer = document.createElement("div");
+        botMessageContainer.className = "message";
+        chat.appendChild(botMessageContainer);
+
+        fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization:
+              "Bearer 43db77dc939b4a7f86f556ad04098b20.U3oPNOkVck0hfMYz",
+          },
+          //body 请求体；在向服务器发送数据时一般是字符串。可以使用 JSON.stringify() 方法将 JavaScript对象转换为字符串。
+          body: JSON.stringify({
+            model: "glm-4-flash",
+            tools: [
+              {
+                type: "retrieval",
+                retrieval: { knowledge_id: "1903281363281440768" },
+              },
+            ],
+            messages: [
+              {
+                role: "system",
+                content:
+                  "你是一个化学与医药领域的专家，可以解答化学与医药领域相关的问题。",
+              },
+              {
+                role: "user",
+                content: message,
+              },
+            ],
+          }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            const reader = response.body.getReader(); //response.body.getReader() 创建了一个 ReadableStreamDefaultReader，用于逐块读取响应体（stream）。
+            let currentMessage = "";
+            function read() {
+              reader
+                .read()
+                .then(({ done, value }) => {
+                  if (done) {
+                    return;
+                    //return 的作用:
+                    //结束当前 read 函数的执行：
+                    //当 done: true 时，直接 return 会跳出函数，不再执行后续逻辑（如拼接数据、解析 JSON 等）。
+                    //不会停止整个流式读取：
+                    //它只会终止当前这一次的 read 函数调用，但因为 read 是递归调用的，之前的调用栈可能仍在处理中。
+                  }
+                  const textChunk = new TextDecoder("utf-8").decode(value);
+                  currentMessage += textChunk;
+                  //currentMessage是一段JSON {"choices":[{"finish_reason":"stop","index":0,"message":{"content":"我是合成实验室的AI助手。","role":"assistant"}}],"created":1743603558,"id":"20250402221917406da3bf8c4f44f1","model":"glm-4-flash","request_id":"20250402221917406da3bf8c4f44f1","usage":{"completion_tokens":9,"prompt_tokens":109,"total_tokens":118}}
+                  //使用 JSON.parse() 尝试解析累积的 currentMessage
+                  //检查解析后的对象是否有 choices[0].message.content 路径
+                  //如果解析成功，提取并显示 content 部分
+                  //如果解析失败（因为数据还不完整），继续读取流
+
+                  try {
+                    // 尝试解析完整的 JSON
+                    const parsedData = JSON.parse(currentMessage);
+                    // 提取 content 内容
+                    if (
+                      parsedData.choices &&
+                      parsedData.choices[0].message.content
+                    ) {
+                      const content = parsedData.choices[0].message.content;
+                      const markdownContent = marked.parse(content);
+                      botMessageContainer.innerHTML = markdownContent;
+                      chat.scrollTop = chat.scrollHeight;
+                      console.log(content); // 只输出 content 部分
+                    }
+                  } catch (e) {
+                    // 如果 JSON 还不完整，继续读取。同步错误习惯写 e，任何命名均可
+                    read();
+                    //read 函数内部递归调用函数本身
+                    //如果你的数据是 JSON 流，try-catch + 递归是最简单可靠的方式。
+                    //因为 JSON.parse() 在数据不完整时会抛出异常。
+                  }
+                })
+                .catch((error) => {
+                  console.error("Stream reading error:", error);
+                });
+              // 异步错误习惯写 error，任何命名均可
+            }
+            read(); //初始调用read函数，通过闭包 访问 reader与currentMessage
+          }) // 解析 JSON 数据 // .then((data) => {console.log(data.choices[0].message.content);})
+
+          .catch((error) => console.error("Error:", error));
+      } // 错误处理
+      inputMessage.addEventListener("keypress", function (event) {
+        if (event.key === "Enter") {
+          send();
+        }
+      });
+    </script>
+  </body>
+</html>
