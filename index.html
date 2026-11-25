@@ -78,7 +78,7 @@
         font-size: 16px;
         font-weight: bold;
         cursor: pointer;
-        transition: background-color 0.3s;
+        transition: background-color 0.3;
       }
       button:hover {
         background-color: #45a049;
@@ -94,16 +94,16 @@
         border-radius: 50%;
         background-color: #888;
         margin-right: 4px;
-        animation: typingAnimation 1.4s infinite ease-in-out;
+        animation: typingAnimation 1.4 infinite ease-in-out;
       }
       .typing-dot:nth-child(1) {
-        animation-delay: 0s;
+        animation-delay: 0;
       }
       .typing-dot:nth-child(2) {
-        animation-delay: 0.2s;
+        animation-delay: 0.2;
       }
       .typing-dot:nth-child(3) {
-        animation-delay: 0.4s;
+        animation-delay: 0.4;
       }
       @keyframes typingAnimation {
         0%,
@@ -157,7 +157,7 @@
           headers: {
             "Content-Type": "application/json",
             Authorization:
-              "Bearer 43db77dc939b4a7f86f556ad04098b20.U3oPNOkVck0hfMYz",
+              "Bearer 43db77d*****hfMYz",
           },
           //body 请求体；在向服务器发送数据时一般是字符串。可以使用 JSON.stringify() 方法将 JavaScript对象转换为字符串。
           body: JSON.stringify({
